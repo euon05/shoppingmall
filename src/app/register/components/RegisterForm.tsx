@@ -36,7 +36,7 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
 
   const [message, setMessage] = useState('')
 
-  // 1. 카카오 우편번호 스크립트 로드
+  // 카카오 주소 스크립트 로드
   useEffect(() => {
     const scriptId = 'daum-postcode-script'
     if (document.getElementById(scriptId)) return
@@ -48,12 +48,10 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
     document.body.appendChild(script)
   }, [])
 
-  // 2. 주소 검색 버튼 클릭 핸들러
+  // 주소 검색
   const handleSearchAddress = () => {
     if (!window.daum || !window.daum.Postcode) {
-      alert(
-        '주소 검색 스크립트가 아직 준비되지 않았습니다. 잠시 후 다시 시도하세요.'
-      )
+      alert('주소 검색 준비 중입니다. 잠시 후 다시 시도해주세요.')
       return
     }
 
@@ -72,11 +70,10 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
       setIdMessage('아이디를 입력하세요.')
       return
     }
+
     try {
       const res = await fetch(
-        `http://localhost:3000/api/auth/check-id?userId=${encodeURIComponent(
-          userId
-        )}`
+        `/api/auth/check-id?userId=${encodeURIComponent(userId)}`
       )
 
       if (!res.ok) {
@@ -100,13 +97,14 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
       setMessage('필수 항목을 입력하세요.')
       return
     }
+
     if (password !== confirmPassword) {
       setMessage('비밀번호가 일치하지 않습니다.')
       return
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/register', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,14 +122,16 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
       })
 
       const data = await res.json()
-      if (res.ok) {
-        alert('회원가입이 완료되었습니다.')
-        router.push('/login')
-      } else {
+
+      if (!res.ok) {
         setMessage(data.message || '회원가입 실패')
+        return
       }
-    } catch {
-      setMessage('서버 오류')
+
+      alert('회원가입이 완료되었습니다!')
+      router.push('/login')
+    } catch (error) {
+      setMessage('서버 오류가 발생했습니다.')
     }
   }
 
@@ -141,6 +141,7 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
 
       <h3 className="text-xl font-semibold mb-4">기본 정보</h3>
 
+      {/* 아이디 + 중복확인 */}
       <div className="flex gap-2 mb-3">
         <input
           placeholder="아이디"
@@ -187,7 +188,9 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
         className="w-full border p-3 mb-6"
       />
 
+      {/* 주소 */}
       <h3 className="text-xl font-semibold mb-4">주소</h3>
+
       <div className="flex gap-2 mb-3">
         <input
           placeholder="우편번호"
@@ -210,6 +213,7 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
         onChange={(e) => setAddress1(e.target.value)}
         className="w-full border p-3 mb-3"
       />
+
       <input
         placeholder="상세주소"
         value={address2}
@@ -217,7 +221,9 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
         className="w-full border p-3 mb-6"
       />
 
+      {/* 휴대전화 */}
       <h3 className="text-xl font-semibold mb-4">휴대전화</h3>
+
       <input
         placeholder="휴대전화 번호"
         value={phone}
@@ -225,13 +231,16 @@ export default function RegisterForm({ goBack }: RegisterFormProps) {
         className="w-full border p-3 mb-6"
       />
 
+      {/* 선택 정보 */}
       <h3 className="text-xl font-semibold mb-4">추가 정보 (선택)</h3>
+
       <input
         placeholder="예금주"
         value={bankHolder}
         onChange={(e) => setBankHolder(e.target.value)}
         className="w-full border p-3 mb-3"
       />
+
       <input
         placeholder="계좌번호"
         value={bankAccount}
